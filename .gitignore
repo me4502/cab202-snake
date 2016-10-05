@@ -1,15 +1,9 @@
-# CMake Files
-CMakeCache.txt
-CMakeFiles
-CMakeScripts
-Makefile
-cmake_install.cmake
-install_manifest.txt
-CTestTestfile.cmake
-
 # Jetbrains IDE Files
 .idea/
 
 # Binaries
 *.o
-snake
+*.hex
+
+# Libraries
+cab202_teensy/
