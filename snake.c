@@ -16,6 +16,14 @@ int main() {
     return 0;
 }
 
+void setup_game() {
+    length = 2;
+    lives = 5;
+    score = 0;
+
+    gamestate = GAMESTATE_PLAYING;
+}
+
 void update() {
 
 }
@@ -34,7 +42,8 @@ void render() {
         }
         show_screen();
         _delay_ms(2000); // Delay for 2 seconds. // TODO Make this a little neater. Timers etc
-        gamestate = GAMESTATE_PLAYING;
+
+        setup_game();
     }
 
     show_screen();

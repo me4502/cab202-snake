@@ -17,6 +17,7 @@ typedef struct snakeSegment {
 
 int length = 2;
 int lives = 5;
+int score = 0;
 
 char * intro_text[] = {
         "By Madeline Miller",
@@ -31,9 +32,28 @@ char * intro_text[] = {
 unsigned char gamestate = GAMESTATE_OPENING;
 
 // Method Declarations
+
+/**
+ * Updates the gamestate.
+ */
 void update();
 
+/**
+ * Renders the game to the LCD display.
+ */
 void render();
 
+/**
+ * Reset the variables, ready for a new game.
+ */
+void setup_game();
+
 // Utility Functions
+
+/**
+ * Gets the character count of a string.
+ *
+ * @param str The input string
+ * @return The character count
+ */
 int string_length(char * str);
