@@ -8,7 +8,7 @@
 
 # Modify these
 NAME=snake
-SRC=snake.c linked_list.c
+SRC=snake.c
 CAB202_LIB_DIR=cab202_teensy
 DEBUG_LIB_DIR=usb_debug_only
 
