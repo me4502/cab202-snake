@@ -30,7 +30,7 @@ char * intro_text[] = {
         "n9342401"
 };
 
-const float timer0_overflow = 0.03264;
+//const float timer0_overflow = 0.03264;
 volatile int timer0_index = 0;
 
 typedef enum {OPENING, PLAYING, GAMEOVER} GameState;
@@ -101,7 +101,13 @@ void setup_game() {
 }
 
 void update() {
-
+    if (gamestate == OPENING) {
+        if (timer0_index >= 61) {
+            setup_game();
+        }
+    } else if (gamestate == PLAYING) {
+    } else if (gamestate == GAMEOVER) {
+    }
 }
 
 void render() {
@@ -114,10 +120,6 @@ void render() {
             int x = LCD_X / 2 - (string_length(text) * 5) / 2; // Glyphs have a width of 5
 
             draw_string((unsigned char) x, (unsigned char) (9 * 2 + i * 9), text);
-        }
-
-        if (timer0_overflow * timer0_index >= 2) {
-            setup_game();
         }
     } else if (gamestate == PLAYING) {
         char info_text[16];
@@ -136,6 +138,7 @@ void render() {
 
             snake_bit = snake_bit->next;
         }
+    } else if (gamestate == GAMEOVER) {
     }
 
     show_screen();
