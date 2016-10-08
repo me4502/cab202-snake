@@ -51,13 +51,13 @@ void * pop(LinkedListEntry ** list) {
     return value;
 }
 
-int length(LinkedListEntry ** list) {
-    if (*list == NULL) {
+int length(LinkedListEntry * list) {
+    if (list == NULL) {
         return 0;
     }
 
     int length = 0;
-    LinkedListEntry * current = *list;
+    LinkedListEntry * current = list;
     while (current->next != NULL) {
         current = current->next;
         length ++;

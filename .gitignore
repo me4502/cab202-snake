@@ -4,6 +4,7 @@
 # Binaries
 *.o
 *.hex
+*.s
 
 # Libraries
 cab202_teensy/

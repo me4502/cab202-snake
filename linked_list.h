@@ -44,7 +44,7 @@ void * pop(LinkedListEntry ** list);
 /**
  * Gets the length of the LinkedList structure.
  *
- * @param list The list reference.
+ * @param list The head of the list
  * @return The length
  */
-int length(LinkedListEntry ** list);
+int length(LinkedListEntry * list);

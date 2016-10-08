@@ -7,7 +7,8 @@
 #
 
 # Modify these
-SRC=snake
+NAME=snake
+SRC=snake.c linked_list.c
 CAB202_LIB_DIR=cab202_teensy
 DEBUG_LIB_DIR=usb_debug_only
 
@@ -20,8 +21,8 @@ DEBUG_LIBS=-lexample
 
 # Default 'recipe'
 all:
-	avr-gcc $(SRC).c $(FLAGS) -I$(CAB202_LIB_DIR) -L$(CAB202_LIB_DIR) $(LIBS) -o $(SRC).o
-	avr-objcopy -O ihex $(SRC).o $(SRC).hex
+	avr-gcc $(SRC) $(FLAGS) -I$(CAB202_LIB_DIR) -L$(CAB202_LIB_DIR) $(LIBS) -o $(NAME).o
+	avr-objcopy -O ihex $(NAME).o $(SRC).hex
 
 # Cleaning  (be wary of this in directories with lots of executables...)
 clean:
@@ -30,5 +31,5 @@ clean:
 
 # Debug
 debug:
-	avr-gcc $(SRC).c $(FLAGS) $(DEBUG_FLAGS) -I$(CAB202_LIB_DIR) -L$(CAB202_LIB_DIR) $(LIBS) $(DEBUG_LIBS) -o $(SRC)-debug.o
-	avr-objcopy -O ihex $(SRC)-debug.o $(SRC)-debug.hex
+	avr-gcc $(SRC) $(FLAGS) $(DEBUG_FLAGS) -I$(CAB202_LIB_DIR) -L$(CAB202_LIB_DIR) $(LIBS) $(DEBUG_LIBS) -o $(NAME)-debug.o
+	avr-objcopy -O ihex $(NAME)-debug.o $(NAME)-debug.hex
