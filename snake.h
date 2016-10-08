@@ -10,14 +10,21 @@
 #include "cpu_speed.h"
 #include "sprite.h"
 
+#include "linked_list.h"
+
+#ifdef USB_DEBUG
+#include "usb_debug_only.h"
+#include "print.h"
+#include "analog.h"
+#endif
+
 typedef struct snakeSegment {
-    int x;
-    int y;
+    unsigned char x;
+    unsigned char y;
 } SnakeSegment;
 
-int length = 2;
-int lives = 5;
-int score = 0;
+unsigned char lives = 5;
+unsigned char score = 0;
 
 char * intro_text[] = {
         "By Madeline Miller",
@@ -30,6 +37,9 @@ char * intro_text[] = {
 #define GAMESTATE_GAMEOVER 2
 
 unsigned char gamestate = GAMESTATE_OPENING;
+
+// Snake
+LinkedListEntry ** snake;
 
 // Method Declarations
 
@@ -56,4 +66,4 @@ void setup_game();
  * @param str The input string
  * @return The character count
  */
-int string_length(char * str);
+unsigned char string_length(char * str);
