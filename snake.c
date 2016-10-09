@@ -41,6 +41,7 @@ volatile int timer0_index = 0;
 
 typedef enum {OPENING, PLAYING, GAMEOVER} GameState;
 GameState gamestate = OPENING;
+unsigned char show_walls = 0;
 
 // Snake
 ScaledCoordinate snake[100];
@@ -85,6 +86,9 @@ int main() {
     PORTD = disable_bit((unsigned char) PORTD, 0); //RIGHT
     PORTB = disable_bit((unsigned char) PORTB, 7); //DOWN
 
+    PORTF = disable_bit((unsigned char) PORTF, 5); //SW2
+    PORTF = disable_bit((unsigned char) PORTF, 6); //SW3
+
     // Initialize Timers
 
     // Timer 0
@@ -107,9 +111,9 @@ int main() {
 #ifdef USB_DEBUG
     usb_init();
 	while (!usb_configured());
-
-    _delay_ms(1000);
 #endif
+
+    _delay_ms(50);
 
     timer0_index = 0;
 
@@ -117,8 +121,6 @@ int main() {
         update();
 
         render();
-
-        _delay_ms(10);
     }
 
     return 0;
@@ -202,7 +204,7 @@ void move_snake_to(char x, char y) {
         last_point.y = 0;
 
     if (last_point.x == food_point.x && last_point.y == food_point.y) {
-        score ++;
+        score += (show_walls == 1 ? 2 : 1);
         spawn_food();
 
         snake_length ++;
@@ -250,6 +252,12 @@ void update() {
             snake_dy = 1;
         }
 
+        if (get_bit((unsigned char) PINF, 5) == 1) {
+            show_walls = 0;
+        } else if (get_bit((unsigned char) PINF, 6) == 1) {
+            show_walls = 1;
+        }
+
         if (lives < 0) {
             gamestate = GAMEOVER;
             timer0_index = 0;
@@ -292,6 +300,11 @@ void render() {
             for (unsigned char y = 0; y < 3; y++) {
                 set_pixel((unsigned char) (food_point.x * 3 + x), (unsigned char) (food_point.y * 3 + y + 8), 1);
             }
+        }
+
+        // Draw the walls
+        if (show_walls == 1) {
+
         }
     } else if (gamestate == GAMEOVER) {
         for (int i = 0; i < sizeof(game_over_text) / sizeof(game_over_text[0]); i++) {
