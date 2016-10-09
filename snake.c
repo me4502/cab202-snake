@@ -32,6 +32,10 @@ char * intro_text[] = {
         "n9342401"
 };
 
+char * game_over_text[] = {
+        "Game Over",
+};
+
 //const float timer0_overflow = 0.03264;
 volatile int timer0_index = 0;
 
@@ -42,6 +46,7 @@ GameState gamestate = OPENING;
 ScaledCoordinate snake[100];
 unsigned char snake_length;
 char snake_dx = 0, snake_dy = 0;
+unsigned char snake_speed = 6;
 
 // Food
 ScaledCoordinate food_point;
@@ -93,6 +98,11 @@ int main() {
     TIMSK0 |= 1 << TOIE0;
     sei();
 
+    // Initialize potentiometers
+    ADMUX = (1 << REFS0);
+    // Prescaler of 128
+    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+
     // If USB Debugging is enabled, connect the debugger.
 #ifdef USB_DEBUG
     usb_init();
@@ -108,7 +118,7 @@ int main() {
 
         render();
 
-        _delay_ms(20);
+        _delay_ms(10);
     }
 
     return 0;
@@ -117,6 +127,16 @@ int main() {
 void setup_game() {
     lives = 5;
     score = 0;
+
+    spawn_food();
+    reset_snake();
+
+    gamestate = PLAYING;
+}
+
+void reset_snake() {
+    snake_dx = 0;
+    snake_dy = 0;
 
     ScaledCoordinate head;
     head.x = (LCD_X / 2) / 3;
@@ -137,18 +157,16 @@ void setup_game() {
     }
 
     snake_length = 2;
-
-    spawn_food();
-
-    gamestate = PLAYING;
 }
 
 void spawn_food() {
     while (1) {
         food_point.x = (char) (rand() % SCALED_WIDTH);
         food_point.y = (char) (rand() % SCALED_HEIGHT);
+        break;
 
-        char is_invalid = 0;
+        // TODO work out why this doesn't work.
+        /*char is_invalid = 0;
         for (int i = 0; i < snake_length; i++) {
             if (snake[i].x == food_point.x && snake[i].y == food_point.y) {
                 is_invalid = 1;
@@ -157,7 +175,7 @@ void spawn_food() {
         }
         if (is_invalid == 0) {
             break;
-        }
+        }*/
     }
 
 #ifdef USB_DEBUG
@@ -171,8 +189,6 @@ void spawn_food() {
 
 void move_snake_to(char x, char y) {
     ScaledCoordinate last_point = snake[snake_length - 1];
-    //char old_x = last_point.x;
-    //char old_y = last_point.y;
     last_point.x = x;
     last_point.y = y;
     if (last_point.x < 0)
@@ -190,23 +206,13 @@ void move_snake_to(char x, char y) {
         spawn_food();
 
         snake_length ++;
-
-#ifdef USB_DEBUG
-        for (int i = 0; i < snake_length; i++) {
-                print("Bit ");
-                phex16(i);
-                print(": ");
-                phex16(snake[i].x);
-                print(" ");
-                phex16(snake[i].y);
-                print("\n");
-        }
-#endif
     }
 
     for (int i = snake_length - 1; i >= 0; i--) {
         if (snake[i].x == last_point.x && snake[i].y == last_point.y) {
             lives --;
+            reset_snake();
+            return;
         }
         snake[i+1] = snake[i];
     }
@@ -220,9 +226,14 @@ void update() {
             setup_game();
         }
     } else if (gamestate == PLAYING) {
-        if (timer0_index > 6 && (snake_dx != 0 || snake_dy != 0)) {
+        if (timer0_index > snake_speed && (snake_dx != 0 || snake_dy != 0)) {
             move_snake_to(snake[0].x + snake_dx, snake[0].y + snake_dy);
             timer0_index = 0;
+
+            ADMUX = (ADMUX & 0xF8) | 1;
+            ADCSRA |= (1 << ADSC);
+            while(ADCSRA & (1 << ADSC));
+            snake_speed = (unsigned char) (ADC / 102 + 2);
         }
 
         if (get_bit((unsigned char) PIND, 1) == 1) {
@@ -238,7 +249,16 @@ void update() {
             snake_dx = 0;
             snake_dy = 1;
         }
+
+        if (lives < 0) {
+            gamestate = GAMEOVER;
+            timer0_index = 0;
+        }
     } else if (gamestate == GAMEOVER) {
+        if (timer0_index >= 61) {
+            gamestate = OPENING;
+            timer0_index = 0;
+        }
     }
 }
 
@@ -274,6 +294,13 @@ void render() {
             }
         }
     } else if (gamestate == GAMEOVER) {
+        for (int i = 0; i < sizeof(game_over_text) / sizeof(game_over_text[0]); i++) {
+            char * text = game_over_text[i];
+
+            int x = LCD_X / 2 - (string_length(text) * 5) / 2; // Glyphs have a width of 5
+
+            draw_string((unsigned char) x, (unsigned char) (9 * 2 + i * 9), text);
+        }
     }
 
     show_screen();

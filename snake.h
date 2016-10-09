@@ -16,6 +16,11 @@ void render();
 void setup_game();
 
 /**
+ * Resets the snake, occurs on a new game or when the snake dies.
+ */
+void reset_snake();
+
+/**
  * Spawns a piece of food somewhere in the playing field.
  */
 void spawn_food();
