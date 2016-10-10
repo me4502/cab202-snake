@@ -133,7 +133,8 @@ void setup_game() {
     wall_length = 0;
 
     // Setup walls. 3 of them.
-    for (int i = 0; i < 3; i++) {
+    int wall_count = (rand() % 3) + 2;
+    for (int i = 0; i < wall_count; i++) {
         WallDirection direction = (rand() % 2) == 1 ? HORIZONTAL : VERTICAL;
         if (direction == HORIZONTAL) {
             unsigned char length = (unsigned char) MAX(3, rand() % SCALED_WIDTH);
@@ -209,10 +210,12 @@ void spawn_food() {
                 break;
             }
         }
-        for (int i = 0; i < wall_length; i++) {
-            if (walls[i].pos.x == food_point.x && walls[i].pos.y == food_point.y) {
-                is_invalid = 1;
-                break;
+        if (show_walls == 1) {
+            for (int i = 0; i < wall_length; i++) {
+                if (walls[i].pos.x == food_point.x && walls[i].pos.y == food_point.y) {
+                    is_invalid = 1;
+                    break;
+                }
             }
         }
         if (is_invalid == 0) {
