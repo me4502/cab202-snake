@@ -19,6 +19,8 @@
 #define SCALED_WIDTH (LCD_X / 3)
 #define SCALED_HEIGHT ((LCD_Y / 3) - 3)
 
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 typedef struct scaledCoordinate {
     char x;
     char y;
@@ -41,7 +43,19 @@ volatile int timer0_index = 0;
 
 typedef enum {OPENING, PLAYING, GAMEOVER} GameState;
 GameState gamestate = OPENING;
+
+// Walls
 unsigned char show_walls = 0;
+
+typedef enum {HORIZONTAL, VERTICAL} WallDirection;
+
+typedef struct wallSegment {
+    ScaledCoordinate pos;
+    WallDirection direction;
+} WallSegment;
+
+WallSegment walls[SCALED_WIDTH * 3];
+unsigned char wall_length;
 
 // Snake
 ScaledCoordinate snake[100];
@@ -56,23 +70,8 @@ unsigned char disable_bit(unsigned char input, unsigned char bit) {
     return (unsigned char) (input & ~(1 << bit));
 }
 
-unsigned char enable_bit(unsigned char input, unsigned char bit) {
-    return (unsigned char) (input | (1 << bit));
-}
-
-unsigned char set_bit(unsigned char input, unsigned char bit, unsigned char state) {
-    if ((state % 2) == 0)
-        return disable_bit(input, bit);
-    else
-        return enable_bit(input, bit);
-}
-
 unsigned char get_bit(unsigned char input, unsigned char bit) {
     return (unsigned char) ((input >> bit) & 1);
-}
-
-unsigned char toggle_bit(unsigned char input, unsigned char bit) {
-    return input = (unsigned char) (input ^ (1 << bit));
 }
 
 int main() {
@@ -119,7 +118,6 @@ int main() {
 
     while (1) {
         update();
-
         render();
     }
 
@@ -130,8 +128,45 @@ void setup_game() {
     lives = 5;
     score = 0;
 
-    spawn_food();
     reset_snake();
+
+    wall_length = 0;
+
+    // Setup walls. 3 of them.
+    for (int i = 0; i < 3; i++) {
+        WallDirection direction = (rand() % 2) == 1 ? HORIZONTAL : VERTICAL;
+        if (direction == HORIZONTAL) {
+            unsigned char length = (unsigned char) MAX(3, rand() % SCALED_WIDTH);
+            char y = (char) (rand() % SCALED_HEIGHT);
+            for (char x = 0; x < length; x++) {
+                ScaledCoordinate coordinate;
+                coordinate.x = x;
+                coordinate.y = y;
+
+                WallSegment segment;
+                segment.direction = direction;
+                segment.pos = coordinate;
+
+                walls[wall_length ++] = segment;
+            }
+        } else {
+            unsigned char length = (unsigned char) MAX(3, rand() % SCALED_HEIGHT);
+            char x = (char) (rand() % SCALED_WIDTH);
+            for (char y = 0; y < length; y++) {
+                ScaledCoordinate coordinate;
+                coordinate.x = x;
+                coordinate.y = y;
+
+                WallSegment segment;
+                segment.direction = direction;
+                segment.pos = coordinate;
+
+                walls[wall_length ++] = segment;
+            }
+        }
+    }
+
+    spawn_food();
 
     gamestate = PLAYING;
 }
@@ -165,19 +200,24 @@ void spawn_food() {
     while (1) {
         food_point.x = (char) (rand() % SCALED_WIDTH);
         food_point.y = (char) (rand() % SCALED_HEIGHT);
-        break;
 
         // TODO work out why this doesn't work.
-        /*char is_invalid = 0;
+        char is_invalid = 0;
         for (int i = 0; i < snake_length; i++) {
             if (snake[i].x == food_point.x && snake[i].y == food_point.y) {
                 is_invalid = 1;
                 break;
             }
         }
+        for (int i = 0; i < wall_length; i++) {
+            if (walls[i].pos.x == food_point.x && walls[i].pos.y == food_point.y) {
+                is_invalid = 1;
+                break;
+            }
+        }
         if (is_invalid == 0) {
             break;
-        }*/
+        }
     }
 
 #ifdef USB_DEBUG
@@ -217,6 +257,17 @@ void move_snake_to(char x, char y) {
             return;
         }
         snake[i+1] = snake[i];
+    }
+
+    if (show_walls == 1) {
+        for (int i = 0; i < wall_length; i++) {
+            WallSegment wall = walls[i];
+            if (last_point.x == wall.pos.x && last_point.y == wall.pos.y) {
+                lives --;
+                reset_snake();
+                return;
+            }
+        }
     }
 
     snake[0] = last_point;
@@ -304,7 +355,18 @@ void render() {
 
         // Draw the walls
         if (show_walls == 1) {
-
+            for (int i = 0; i < wall_length; i++) {
+                WallSegment wall = walls[i];
+                if (wall.direction == HORIZONTAL) {
+                    for (unsigned char x = 0; x < 3; x++) {
+                        set_pixel((unsigned char) (wall.pos.x * 3 + x), (unsigned char) (wall.pos.y * 3 + 1 + 8), 1);
+                    }
+                } else {
+                    for (unsigned char y = 0; y < 3; y++) {
+                        set_pixel((unsigned char) (wall.pos.x * 3 + 1), (unsigned char) (wall.pos.y * 3 + y + 8), 1);
+                    }
+                }
+            }
         }
     } else if (gamestate == GAMEOVER) {
         for (int i = 0; i < sizeof(game_over_text) / sizeof(game_over_text[0]); i++) {
