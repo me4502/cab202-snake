@@ -1,12 +1,13 @@
-#include <avr/io.h>
-#include <util/delay.h>
 #include <stdio.h>
-#include <avr/interrupt.h>
 #include <stdlib.h>
 
-#include "lcd.h"
-#include "graphics.h"
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+
 #include "cpu_speed.h"
+#include "graphics.h"
+#include "lcd.h"
 
 #include "snake.h"
 
