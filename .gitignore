@@ -10,3 +10,6 @@
 cab202_teensy/
 avr/
 usb_debug_only/
+
+# De-Ignore submissions
+!*submission.hex
