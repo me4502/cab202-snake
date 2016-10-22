@@ -20,8 +20,6 @@
 #define SCALED_WIDTH (LCD_X / 3)
 #define SCALED_HEIGHT ((LCD_Y / 3) - 3)
 
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
 typedef struct scaledCoordinate {
     char x;
     char y;
@@ -41,6 +39,7 @@ char * game_over_text[] = {
 
 //const float timer0_overflow = 0.03264;
 volatile int timer0_index = 0;
+unsigned int time_since_press[4];
 
 typedef enum {OPENING, PLAYING, GAMEOVER} GameState;
 GameState gamestate = OPENING;
@@ -59,7 +58,7 @@ WallSegment walls[SCALED_WIDTH * 3];
 unsigned char wall_length;
 
 // Snake
-ScaledCoordinate snake[100];
+ScaledCoordinate snake[200];
 unsigned char snake_length;
 char snake_dx = 0, snake_dy = 0;
 unsigned char snake_speed = 6;
@@ -73,6 +72,10 @@ unsigned char disable_bit(unsigned char input, unsigned char bit) {
 
 unsigned char get_bit(unsigned char input, unsigned char bit) {
     return (unsigned char) ((input >> bit) & 1);
+}
+
+inline unsigned char max(unsigned char a, unsigned char b) {
+    return a > b ? a : b;
 }
 
 int main() {
@@ -134,13 +137,20 @@ void setup_game() {
     wall_length = 0;
 
     // Setup walls. 3 of them.
-    int wall_count = (rand() % 3) + 2;
-    for (int i = 0; i < wall_count; i++) {
+    int wall_count = (rand() % 1) + 3;
+    for (int i = 0; i <= wall_count; i++) {
         WallDirection direction = (rand() % 2) == 1 ? HORIZONTAL : VERTICAL;
         if (direction == HORIZONTAL) {
-            unsigned char length = (unsigned char) MAX(3, rand() % SCALED_WIDTH);
+            unsigned char length = max(4, (unsigned char) (rand() % SCALED_WIDTH));
+
+#ifdef USB_DEBUG
+            print("length: ");
+        phex16(length);
+            print("\n");
+#endif
+
             char y = (char) (rand() % SCALED_HEIGHT);
-            for (char x = 0; x < length; x++) {
+            for (char x = 0; x <= length; x++) {
                 ScaledCoordinate coordinate;
                 coordinate.x = x;
                 coordinate.y = y;
@@ -152,9 +162,16 @@ void setup_game() {
                 walls[wall_length ++] = segment;
             }
         } else {
-            unsigned char length = (unsigned char) MAX(3, rand() % SCALED_HEIGHT);
+            unsigned char length = max(4, (unsigned char) (rand() % SCALED_HEIGHT));
+
+#ifdef USB_DEBUG
+            print("length: ");
+            phex16(length);
+            print("\n");
+#endif
+
             char x = (char) (rand() % SCALED_WIDTH);
-            for (char y = 0; y < length; y++) {
+            for (char y = 0; y <= length; y++) {
                 ScaledCoordinate coordinate;
                 coordinate.x = x;
                 coordinate.y = y;
@@ -276,9 +293,11 @@ void update() {
             setup_game();
         }
     } else if (gamestate == PLAYING) {
-        if (timer0_index > snake_speed && (snake_dx != 0 || snake_dy != 0)) {
-            move_snake_to(snake[0].x + snake_dx, snake[0].y + snake_dy);
-            timer0_index = 0;
+        if (timer0_index > snake_speed ) {
+            if (snake_dx != 0 || snake_dy != 0) {
+                move_snake_to(snake[0].x + snake_dx, snake[0].y + snake_dy);
+                timer0_index = 0;
+            }
 
             ADMUX = (ADMUX & 0xF8) | 1;
             ADCSRA |= (1 << ADSC);
@@ -286,18 +305,26 @@ void update() {
             snake_speed = (unsigned char) (ADC / 102 + 2);
         }
 
-        if (get_bit((unsigned char) PIND, 1) == 1) {
+        if (get_bit((unsigned char) PIND, 1) == 1 && time_since_press[0] > 15) {
             snake_dx = 0;
             snake_dy = -1;
-        } else if (get_bit((unsigned char) PINB, 1) == 1) {
+            time_since_press[0] = 0;
+        } else if (get_bit((unsigned char) PINB, 1) == 1 && time_since_press[1] > 15) {
             snake_dx = -1;
             snake_dy = 0;
-        } else if (get_bit((unsigned char) PIND, 0) == 1) {
+            time_since_press[1] = 0;
+        } else if (get_bit((unsigned char) PIND, 0) == 1 && time_since_press[2] > 15) {
             snake_dx = 1;
             snake_dy = 0;
-        } else if (get_bit((unsigned char) PINB, 7) == 1) {
+            time_since_press[2] = 0;
+        } else if (get_bit((unsigned char) PINB, 7) == 1 && time_since_press[3] > 15) {
             snake_dx = 0;
             snake_dy = 1;
+            time_since_press[3] = 0;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            time_since_press[i] ++;
         }
 
         if (get_bit((unsigned char) PINF, 5) == 1) {
