@@ -203,14 +203,7 @@ void spawn_food() {
         food_point.x = (char) (rand() % SCALED_WIDTH);
         food_point.y = (char) (rand() % SCALED_HEIGHT);
 
-        // TODO work out why this doesn't work.
         char is_invalid = 0;
-        for (int i = 0; i < snake_length; i++) {
-            if (snake[i].x == food_point.x && snake[i].y == food_point.y) {
-                is_invalid = 1;
-                break;
-            }
-        }
         if (show_walls == 1) {
             for (int i = 0; i < wall_length; i++) {
                 if (walls[i].pos.x == food_point.x && walls[i].pos.y == food_point.y) {
